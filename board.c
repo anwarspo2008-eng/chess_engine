@@ -7,6 +7,7 @@ int board[8][8];
 int selected_row = -1;
 int selected_col = -1;
 int white_turn = 1;
+int game_over = 0;
 
 void start_game(void)
 {
@@ -15,19 +16,25 @@ void start_game(void)
 
     init_board();
 
-   while (!WindowShouldClose())
-{
-    handle_input();
+    while (!WindowShouldClose())
+    {
+        handle_input();
 
-    BeginDrawing();
-    ClearBackground(DARKGRAY);
+        BeginDrawing();
+        ClearBackground(DARKGRAY);
 
-    draw_board();
-    draw_selection();
-    draw_pieces(board);
+        draw_board();
+        draw_selection();
+        draw_pieces(board);
+        if (game_over == 1)
+            draw_message("CHECKMATE!", 20, RED);
+        else if (game_over == 2)
+            draw_message("STALEMATE!", 20, ORANGE);
+        else if (is_in_check(board, white_turn))
+            draw_message("CHECK!", 20, RED);
 
-    EndDrawing();
-}
+        EndDrawing();
+    }
 
     CloseWindow();
 }
@@ -83,6 +90,14 @@ void init_board(void)
     init_pieces(board);
 }
 
+void draw_message(const char *text, int y, Color color)
+{
+    int text_w;
+
+    text_w = MeasureText(text, 40);
+    DrawText(text, (800 - text_w) / 2, y, 40, color);
+}
+
 static int is_own_piece(int piece)
 {
     if (piece == EMPTY)
@@ -96,6 +111,9 @@ static int is_own_piece(int piece)
 
 void draw_selection(void)
 {
+    int row;
+    int col;
+
     if (selected_row == -1)
         return ;
     DrawRectangle(
@@ -105,6 +123,23 @@ void draw_selection(void)
         SQUARE_SIZE,
         Fade(YELLOW, 0.5f)
     );
+    row = 0;
+    while (row < 8)
+    {
+        col = 0;
+        while (col < 8)
+        {
+            if (is_valid_move(board, selected_row, selected_col, row, col))
+                DrawCircle(
+                    BOARD_X + col * SQUARE_SIZE + SQUARE_SIZE / 2,
+                    BOARD_Y + row * SQUARE_SIZE + SQUARE_SIZE / 2,
+                    10,
+                    Fade(DARKGREEN, 0.6f)
+                );
+            col++;
+        }
+        row++;
+    }
 }
 
 void handle_input(void)
@@ -113,6 +148,8 @@ void handle_input(void)
     int row;
     int col;
 
+    if (game_over != 0)
+        return ;
     if (!IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         return ;
     mouse = GetMousePosition();
@@ -141,12 +178,20 @@ void handle_input(void)
         selected_row = row;
         selected_col = col;
     }
-    else if (is_legal_move(board, selected_row, selected_col, row, col))
-{
-    board[row][col] = board[selected_row][selected_col];
-    board[selected_row][selected_col] = EMPTY;
-    selected_row = -1;
-    selected_col = -1;
-    white_turn = !white_turn;
-}
+    else if (is_valid_move(board, selected_row, selected_col, row, col))
+    {
+        board[row][col] = board[selected_row][selected_col];
+        board[selected_row][selected_col] = EMPTY;
+        pawn_promotion(board, row, col, board[row][col]);
+        selected_row = -1;
+        selected_col = -1;
+        white_turn = !white_turn;
+        if (!has_any_moves(board, white_turn))
+        {
+            if (is_in_check(board, white_turn))
+                game_over = 1;
+            else
+                game_over = 2;
+        }
+    }
 }
