@@ -1,6 +1,7 @@
 #include "board.h"
 #include "pieces.h"
 #include "raylib.h"
+#include "moves.h"
 
 int board[8][8];
 int selected_row = -1;
@@ -140,12 +141,12 @@ void handle_input(void)
         selected_row = row;
         selected_col = col;
     }
-    else
-    {
-        board[row][col] = board[selected_row][selected_col];
-        board[selected_row][selected_col] = EMPTY;
-        selected_row = -1;
-        selected_col = -1;
-        white_turn = !white_turn;
-    }
+    else if (is_legal_move(board, selected_row, selected_col, row, col))
+{
+    board[row][col] = board[selected_row][selected_col];
+    board[selected_row][selected_col] = EMPTY;
+    selected_row = -1;
+    selected_col = -1;
+    white_turn = !white_turn;
+}
 }
