@@ -10,7 +10,6 @@ void start_game(void)
     SetTargetFPS(60);
 
     init_board();
-    
 
     while (!WindowShouldClose())
     {
@@ -39,9 +38,9 @@ void draw_board(void)
         while (col < 8)
         {
             if ((row + col) % 2 == 0)
-                color = BROWN;
+                color = BEIGE;
             else
-                color = WHITE;
+                color = BROWN;
 
             DrawRectangle(
                 BOARD_X + col * SQUARE_SIZE,
@@ -50,6 +49,7 @@ void draw_board(void)
                 SQUARE_SIZE,
                 color
             );
+
             col++;
         }
         row++;
@@ -67,7 +67,7 @@ void init_board(void)
         col = 0;
         while (col < 8)
         {
-            board[row][col] = 0;
+            board[row][col] = EMPTY;
             col++;
         }
         row++;
@@ -75,4 +75,3 @@ void init_board(void)
 
     init_pieces(board);
 }
-
