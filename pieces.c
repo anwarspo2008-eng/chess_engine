@@ -52,7 +52,7 @@ void draw_pieces(int board[8][8])
                 x = BOARD_X + col * SQUARE_SIZE;
                 y = BOARD_Y + row * SQUARE_SIZE;
 
-                piece[0] = 'P';
+                piece[0] = piece_letter(board[row][col]);
                 piece[1] = '\0';
 
                 DrawText(piece, x + 25, y + 20, 40, BLACK);
@@ -60,5 +60,38 @@ void draw_pieces(int board[8][8])
             col++;
         }
         row++;
+    }
+}
+
+static char piece_letter(int piece)
+{
+    switch (piece)
+    {
+        case WHITE_PAWN:
+            return 'P';
+        case WHITE_ROOK:
+            return 'R';
+        case WHITE_KNIGHT:
+            return 'N';
+        case WHITE_BISHOP:
+            return 'B';
+        case WHITE_QUEEN:
+            return 'Q';
+        case WHITE_KING:
+            return 'K';
+        case BLACK_PAWN:
+            return 'p';
+        case BLACK_ROOK:
+            return 'r';
+        case BLACK_KNIGHT:
+            return 'n';
+        case BLACK_BISHOP:
+            return 'b';
+        case BLACK_QUEEN:
+            return 'q';
+        case BLACK_KING:
+            return 'k';
+        default:
+            return '?';
     }
 }

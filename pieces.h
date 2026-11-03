@@ -19,5 +19,6 @@
 
 void init_pieces(int board[8][8]);
 void draw_pieces(int board[8][8]);
+static char piece_letter(int piece);
 
 #endif
