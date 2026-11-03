@@ -4,6 +4,28 @@
 
 int board[8][8];
 
+void start_game(void)
+{
+    InitWindow(800, 800, "Chess");
+    SetTargetFPS(60);
+
+    init_board();
+    
+
+    while (!WindowShouldClose())
+    {
+        BeginDrawing();
+        ClearBackground(DARKGRAY);
+
+        draw_board();
+        draw_pieces(board);
+
+        EndDrawing();
+    }
+
+    CloseWindow();
+}
+
 void draw_board(void)
 {
     int row;
@@ -53,3 +75,4 @@ void init_board(void)
 
     init_pieces(board);
 }
+

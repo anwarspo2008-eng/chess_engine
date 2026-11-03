@@ -1,4 +1,6 @@
 #include "pieces.h"
+#include "board.h"
+#include "raylib.h"
 
 void init_pieces(int board[8][8])
 {
@@ -7,26 +9,56 @@ void init_pieces(int board[8][8])
     i = 0;
     while (i < 8)
     {
-        board[1][i] = -1;
-        board[6][i] = 1;
+        board[1][i] = BLACK_PAWN;
+        board[6][i] = WHITE_PAWN;
         i++;
     }
 
-    board[0][0] = -2;
-    board[0][7] = -2;
-    board[0][1] = -3;
-    board[0][6] = -3;
-    board[0][2] = -4;
-    board[0][5] = -4;
-    board[0][3] = -5;
-    board[0][4] = -6;
+    board[0][0] = BLACK_ROOK;
+    board[0][7] = BLACK_ROOK;
+    board[0][1] = BLACK_KNIGHT;
+    board[0][6] = BLACK_KNIGHT;
+    board[0][2] = BLACK_BISHOP;
+    board[0][5] = BLACK_BISHOP;
+    board[0][3] = BLACK_QUEEN;
+    board[0][4] = BLACK_KING;
 
-    board[7][0] = 2;
-    board[7][7] = 2;
-    board[7][1] = 3;
-    board[7][6] = 3;
-    board[7][2] = 4;
-    board[7][5] = 4;
-    board[7][3] = 5;
-    board[7][4] = 6;
+    board[7][0] = WHITE_ROOK;
+    board[7][7] = WHITE_ROOK;
+    board[7][1] = WHITE_KNIGHT;
+    board[7][6] = WHITE_KNIGHT;
+    board[7][2] = WHITE_BISHOP;
+    board[7][5] = WHITE_BISHOP;
+    board[7][3] = WHITE_QUEEN;
+    board[7][4] = WHITE_KING;
+}
+
+void draw_pieces(int board[8][8])
+{
+    int row;
+    int col;
+    int x;
+    int y;
+    char piece[2];
+
+    row = 0;
+    while (row < 8)
+    {
+        col = 0;
+        while (col < 8)
+        {
+            if (board[row][col] != 0)
+            {
+                x = BOARD_X + col * SQUARE_SIZE;
+                y = BOARD_Y + row * SQUARE_SIZE;
+
+                piece[0] = 'P';
+                piece[1] = '\0';
+
+                DrawText(piece, x + 25, y + 20, 40, BLACK);
+            }
+            col++;
+        }
+        row++;
+    }
 }

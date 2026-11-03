@@ -8,6 +8,7 @@
 
 extern int board[8][8];
 
+void start_game(void);
 void draw_board(void);
 void init_board(void);
 
