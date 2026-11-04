@@ -180,8 +180,14 @@ void handle_input(void)
     }
     else if (is_valid_move(board, selected_row, selected_col, row, col))
     {
+        if (is_en_passant_capture(board, selected_row, selected_col, row, col))
+            board[selected_row][col] = EMPTY;
         board[row][col] = board[selected_row][selected_col];
         board[selected_row][selected_col] = EMPTY;
+        last_move[0] = selected_row;
+        last_move[1] = selected_col;
+        last_move[2] = row;
+        last_move[3] = col;
         pawn_promotion(board, row, col, board[row][col]);
         selected_row = -1;
         selected_col = -1;

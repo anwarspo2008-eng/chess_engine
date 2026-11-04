@@ -1,55 +1,22 @@
 #include "moves.h"
 #include "pieces.h"
 
-static int abs_val(int n){
+int last_move[4] = {-1, -1, -1, -1};
+
+static int abs_val(int n)
+{
     if (n < 0)
         return -n;
     return n;
 }
 
-static int sign(int n){
-    if (n < 0)
-        return -1;
+static int sign(int n)
+{
     if (n > 0)
         return 1;
+    if (n < 0)
+        return -1;
     return 0;
-}
-
-static int pawn_ok(int board[8][8], int fr, int fc, int tr, int tc)
-{
-    int dir;
-    int start_row;
-    int dr;
-    int dc;
-
-    if (board[fr][fc] > 0)
-    {
-        dir = -1;       
-        start_row = 6;
-    }
-    else
-    {
-        dir = 1;        
-        start_row = 1;
-    }
-    dr = tr - fr;
-    dc = tc - fc;
-    if (dc == 0 && dr == dir && board[tr][tc] == EMPTY)
-        return 1;
-    if (dc == 0 && dr == 2 * dir && fr == start_row
-        && board[fr + dir][fc] == EMPTY && board[tr][tc] == EMPTY)
-        return 1;
-    if (abs_val(dc) == 1 && dr == dir && board[tr][tc] != EMPTY)
-        return 1;
-    return 0;
-}
-
-void pawn_promotion(int board[8][8], int row, int col, int new_piece)
-{
-    if (board[row][col] == WHITE_PAWN && row == 0)
-        board[row][col] = WHITE_QUEEN; // Promote to queen by default
-    else if (board[row][col] == BLACK_PAWN && row == 7)
-        board[row][col] = BLACK_QUEEN; // Promote to queen by default
 }
 
 static int path_clear(int board[8][8], int fr, int fc, int tr, int tc)
@@ -73,8 +40,65 @@ static int path_clear(int board[8][8], int fr, int fc, int tr, int tc)
     return 1;
 }
 
-int is_legal_move(int board[8][8], int fr, int fc, int tr, int tc){
-    int piece ;
+static int en_passant_ok(int board[8][8], int fr, int fc, int tr, int tc,
+                         int last[4])
+{
+    int mover;
+    int victim;
+
+    if (last[0] == -1)
+        return 0;
+    mover = board[fr][fc];
+    victim = board[last[2]][last[3]];
+    if (abs_val(mover) != WHITE_PAWN || abs_val(victim) != WHITE_PAWN)
+        return 0;
+    if (mover * victim > 0)
+        return 0;
+    if (abs_val(last[2] - last[0]) != 2)
+        return 0;
+    if (fr != last[2])
+        return 0;
+    if (abs_val(fc - tc) != 1 || tc != last[3])
+        return 0;
+    if (tr != last[2] + sign(victim))
+        return 0;
+    return 1;
+}
+
+static int pawn_ok(int board[8][8], int fr, int fc, int tr, int tc)
+{
+    int dir;
+    int start_row;
+    int dr;
+    int dc;
+
+    if (board[fr][fc] > 0)
+    {
+        dir = -1;
+        start_row = 6;
+    }
+    else
+    {
+        dir = 1;
+        start_row = 1;
+    }
+    dr = tr - fr;
+    dc = tc - fc;
+    if (dc == 0 && dr == dir && board[tr][tc] == EMPTY)
+        return 1;
+    if (dc == 0 && dr == 2 * dir && fr == start_row
+        && board[fr + dir][fc] == EMPTY && board[tr][tc] == EMPTY)
+        return 1;
+    if (abs_val(dc) == 1 && dr == dir && board[tr][tc] != EMPTY)
+        return 1;
+    if (en_passant_ok(board, fr, fc, tr, tc, last_move))
+        return 1;
+    return 0;
+}
+
+int is_legal_move(int board[8][8], int fr, int fc, int tr, int tc)
+{
+    int piece;
     int type;
     int dr;
     int dc;
@@ -82,7 +106,6 @@ int is_legal_move(int board[8][8], int fr, int fc, int tr, int tc){
     piece = board[fr][fc];
     dr = tr - fr;
     dc = tc - fc;
-
     if (dr == 0 && dc == 0)
         return 0;
     if (piece * board[tr][tc] > 0)
@@ -90,7 +113,7 @@ int is_legal_move(int board[8][8], int fr, int fc, int tr, int tc){
     type = abs_val(piece);
     if (type == WHITE_PAWN)
         return pawn_ok(board, fr, fc, tr, tc);
-     if (type == WHITE_KNIGHT)
+    if (type == WHITE_KNIGHT)
         return (abs_val(dr) == 2 && abs_val(dc) == 1)
             || (abs_val(dr) == 1 && abs_val(dc) == 2);
     if (type == WHITE_KING)
@@ -101,8 +124,14 @@ int is_legal_move(int board[8][8], int fr, int fc, int tr, int tc){
     if (type == WHITE_BISHOP || type == WHITE_QUEEN)
         if (abs_val(dr) == abs_val(dc) && path_clear(board, fr, fc, tr, tc))
             return 1;
-    return 0;  
-} 
+    return 0;
+}
+
+int is_en_passant_capture(int board[8][8], int fr, int fc, int tr, int tc)
+{
+    return abs_val(board[fr][fc]) == WHITE_PAWN
+        && fc != tc && board[tr][tc] == EMPTY;
+}
 
 int find_king(int board[8][8], int color)
 {
@@ -162,10 +191,11 @@ int is_in_check(int board[8][8], int color)
 }
 
 int is_valid_move(int board[8][8], int fr, int fc, int tr, int tc)
-
 {
     int piece;
     int captured;
+    int ep_piece;
+    int is_ep;
     int color;
     int result;
 
@@ -175,29 +205,37 @@ int is_valid_move(int board[8][8], int fr, int fc, int tr, int tc)
     if (!is_legal_move(board, fr, fc, tr, tc))
         return 0;
     color = (piece > 0) ? 1 : 0;
+    is_ep = is_en_passant_capture(board, fr, fc, tr, tc);
     captured = board[tr][tc];
+    ep_piece = board[fr][tc];
     board[tr][tc] = piece;
     board[fr][fc] = EMPTY;
+    if (is_ep)
+        board[fr][tc] = EMPTY;
     result = !is_in_check(board, color);
     board[fr][fc] = piece;
     board[tr][tc] = captured;
+    if (is_ep)
+        board[fr][tc] = ep_piece;
     return result;
 }
 
 int has_any_moves(int board[8][8], int color)
 {
-    int row;
-    int col;
+    int fr;
+    int fc;
     int tr;
     int tc;
+    int piece;
 
-    row = 0;
-    while (row < 8)
+    fr = 0;
+    while (fr < 8)
     {
-        col = 0;
-        while (col < 8)
+        fc = 0;
+        while (fc < 8)
         {
-            if ((board[row][col] != EMPTY) && ((board[row][col] > 0) == (color > 0)))
+            piece = board[fr][fc];
+            if (piece != EMPTY && (piece > 0) == (color > 0))
             {
                 tr = 0;
                 while (tr < 8)
@@ -205,16 +243,24 @@ int has_any_moves(int board[8][8], int color)
                     tc = 0;
                     while (tc < 8)
                     {
-                        if (is_valid_move(board, row, col, tr, tc))
+                        if (is_valid_move(board, fr, fc, tr, tc))
                             return 1;
                         tc++;
                     }
                     tr++;
                 }
             }
-            col++;
+            fc++;
         }
-        row++;
+        fr++;
     }
     return 0;
+}
+
+void pawn_promotion(int board[8][8], int row, int col, int piece)
+{
+    if (piece == WHITE_PAWN && row == 0)
+        board[row][col] = WHITE_QUEEN;
+    else if (piece == BLACK_PAWN && row == 7)
+        board[row][col] = BLACK_QUEEN;
 }
