@@ -178,12 +178,16 @@ void handle_input(void)
         selected_row = row;
         selected_col = col;
     }
-    else if (is_valid_move(board, selected_row, selected_col, row, col))
+        else if (is_valid_move(board, selected_row, selected_col, row, col))
     {
         if (is_en_passant_capture(board, selected_row, selected_col, row, col))
             board[selected_row][col] = EMPTY;
+        if (is_castling_move(board, selected_row, selected_col, row, col))
+            castle_move_rook(board, row, col);
         board[row][col] = board[selected_row][selected_col];
         board[selected_row][selected_col] = EMPTY;
+        has_moved[selected_row][selected_col] = 1;
+        has_moved[row][col] = 1;
         last_move[0] = selected_row;
         last_move[1] = selected_col;
         last_move[2] = row;

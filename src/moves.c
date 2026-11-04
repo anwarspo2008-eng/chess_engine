@@ -2,6 +2,7 @@
 #include "pieces.h"
 
 int last_move[4] = {-1, -1, -1, -1};
+int has_moved[8][8];
 
 static int abs_val(int n)
 {
@@ -190,6 +191,76 @@ int is_in_check(int board[8][8], int color)
     return 0;
 }
 
+static int king_safe_on(int board[8][8], int fr, int fc, int tr, int tc,
+                        int color)
+{
+    int king;
+    int result;
+
+    king = board[fr][fc];
+    board[fr][fc] = EMPTY;
+    board[tr][tc] = king;
+    result = !is_in_check(board, color);
+    board[tr][tc] = EMPTY;
+    board[fr][fc] = king;
+    return result;
+}
+
+static int castle_ok(int board[8][8], int fr, int fc, int tr, int tc)
+{
+    int color;
+    int rook;
+    int rook_col;
+    int step;
+
+    color = (board[fr][fc] > 0) ? 1 : 0;
+    rook = (color == 1) ? WHITE_ROOK : -WHITE_ROOK;
+    if (fr != ((color == 1) ? 7 : 0) || fc != 4)
+        return 0;
+    if (board[tr][tc] != EMPTY)
+        return 0;
+    if (tc == 6)
+        rook_col = 7;
+    else if (tc == 2)
+        rook_col = 0;
+    else
+        return 0;
+    if (has_moved[fr][fc] || has_moved[fr][rook_col])
+        return 0;
+    if (board[fr][rook_col] != rook)
+        return 0;
+    if (!path_clear(board, fr, fc, fr, rook_col))
+        return 0;
+    if (is_in_check(board, color))
+        return 0;
+    step = (tc > fc) ? 1 : -1;
+    if (!king_safe_on(board, fr, fc, fr, fc + step, color))
+        return 0;
+    if (!king_safe_on(board, fr, fc, tr, tc, color))
+        return 0;
+    return 1;
+}
+
+int is_castling_move(int board[8][8], int fr, int fc, int tr, int tc)
+{
+    return abs_val(board[fr][fc]) == WHITE_KING
+        && fr == tr && abs_val(tc - fc) == 2;
+}
+
+void castle_move_rook(int board[8][8], int row, int king_col)
+{
+    if (king_col == 6)
+    {
+        board[row][5] = board[row][7];
+        board[row][7] = EMPTY;
+    }
+    else
+    {
+        board[row][3] = board[row][0];
+        board[row][0] = EMPTY;
+    }
+}
+
 int is_valid_move(int board[8][8], int fr, int fc, int tr, int tc)
 {
     int piece;
@@ -202,6 +273,8 @@ int is_valid_move(int board[8][8], int fr, int fc, int tr, int tc)
     piece = board[fr][fc];
     if (piece == EMPTY)
         return 0;
+    if (is_castling_move(board, fr, fc, tr, tc))
+        return castle_ok(board, fr, fc, tr, tc);
     if (!is_legal_move(board, fr, fc, tr, tc))
         return 0;
     color = (piece > 0) ? 1 : 0;
